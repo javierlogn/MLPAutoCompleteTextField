@@ -209,16 +209,20 @@ static NSString *kDefaultAutoCompleteCellIdentifier = @"_DefaultAutoCompleteCell
     
     id autoCompleteObject = self.autoCompleteSuggestions[indexPath.row];
     NSString *suggestedString;
+    NSString *suggestedStringSubtitle;
     if([autoCompleteObject isKindOfClass:[NSString class]]){
         suggestedString = (NSString *)autoCompleteObject;
     } else if ([autoCompleteObject conformsToProtocol:@protocol(MLPAutoCompletionObject)]){
         suggestedString = [(id <MLPAutoCompletionObject>)autoCompleteObject autocompleteString];
+        if ([autoCompleteObject respondsToSelector:@selector(autocompleteStringSubtitle)]){
+            suggestedStringSubtitle = [(id <MLPAutoCompletionObject>)autoCompleteObject autocompleteStringSubtitle];
+        }
     } else {
         NSAssert(0, @"Autocomplete suggestions must either be NSString or objects conforming to the MLPAutoCompletionObject protocol.");
     }
     
     
-    [self configureCell:cell atIndexPath:indexPath withAutoCompleteString:suggestedString];
+    [self configureCell:cell atIndexPath:indexPath withAutoCompleteString:suggestedString andAutoCompleteSubtitle:suggestedStringSubtitle];
     
     
     return cell;
@@ -231,6 +235,13 @@ static NSString *kDefaultAutoCompleteCellIdentifier = @"_DefaultAutoCompleteCell
     [cell setBackgroundColor:[UIColor clearColor]];
     [cell.textLabel setTextColor:self.textColor];
     [cell.textLabel setFont:self.font];
+    UIView *container = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 40, 44)];
+    UILabel *selectLabel = [[UILabel alloc] initWithFrame:container.bounds];
+    selectLabel.font  = [UIFont fontWithName:@"ProximaNova-Semibold" size:12.0f];
+    selectLabel.textColor = [UIColor colorWithRed:(124.0f/255.0f) green:(198.0f/255.0f) blue:(49.0f/255.0f) alpha:1.0f];
+    selectLabel.text = @"Select";
+    [container addSubview:selectLabel];
+    cell.accessoryView = container;
     return cell;
 }
 
@@ -242,6 +253,8 @@ static NSString *kDefaultAutoCompleteCellIdentifier = @"_DefaultAutoCompleteCell
 - (void)configureCell:(UITableViewCell *)cell
           atIndexPath:(NSIndexPath *)indexPath
 withAutoCompleteString:(NSString *)string
+andAutoCompleteSubtitle:(NSString *)subtitle;
+
 {
     
     NSAttributedString *boldedString = nil;
@@ -277,6 +290,13 @@ withAutoCompleteString:(NSString *)string
     } else {
         [cell.textLabel setText:string];
         [cell.textLabel setFont:[UIFont fontWithName:self.font.fontName size:self.autoCompleteFontSize]];
+    }
+    
+    if (subtitle) {
+        [cell.detailTextLabel setText:subtitle];
+        cell.detailTextLabel.font  = [UIFont fontWithName:@"ProximaNova-Regular" size:12.0f];
+        cell.detailTextLabel.textColor = [UIColor colorWithRed:(183.0f/255.0f) green:(183.0f/255.0f) blue:(183.0f/255.0f) alpha:1.0f];
+        
     }
     
     cell.accessibilityLabel = [[self class] accessibilityLabelForIndexPath:indexPath];
@@ -637,11 +657,11 @@ withAutoCompleteString:(NSString *)string
 
 - (void)setRoundedRectStyleForAutoCompleteTableView
 {
+//    CGFloat offsetY = self.autoCompleteTableOriginOffset.height;
     [self setAutoCompleteTableCornerRadius:8.0];
     [self setAutoCompleteTableOriginOffset:CGSizeMake(0, -18)];
-    [self setAutoCompleteScrollIndicatorInsets:UIEdgeInsetsMake(18, 0, 0, 0)];
-    [self setAutoCompleteContentInsets:UIEdgeInsetsMake(18, 0, 0, 0)];
-    
+    [self setAutoCompleteScrollIndicatorInsets:UIEdgeInsetsMake(18 , 0, 0, 0)];
+    [self setAutoCompleteContentInsets:UIEdgeInsetsMake(18 , 0, 0, 0)];
     if(self.backgroundColor == [UIColor clearColor]){
         [self setAutoCompleteTableBackgroundColor:[UIColor whiteColor]];
     } else {
